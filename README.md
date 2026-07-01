@@ -8,14 +8,20 @@
 
 ## Submission Summary
 
-| Part | Deliverable |
-|------|-------------|--------|
-| **A — Pipeline & Model** | 4-model comparison, time-series CV, Random Forest, isotonic calibration
-| **B — Serving API** | FastAPI with Swagger docs, deployed on Render |  [Backend](https://umba-fraud-detection.onrender.com/docs) |
-| **C — Dashboard** | React + TypeScript operations dashboard, deployed on Netlify |  [front-end](https://umba-fraud-detection.netlify.app/) |
-| **D — Dockerize & Deploy** | Dockerfiles, docker-compose, cloud deployment
-| **predictions.csv** | 40,000 rows, correct submission format
-| **GitHub Repo** | Full source code, model artifact, README |  [gregory-bot/Umba-Fraud-Detection](https://github.com/gregory-bot/Umba-Fraud-Detection) |
+
+## Submission Summary
+
+**Part A — Pipeline & Model:** 4-model comparison, time-series cross-validation, Random Forest selected, isotonic calibration applied. Full pipeline is reproducible with a single command: `python src/pipeline.py`.
+
+**Part B — Serving API:** FastAPI with interactive Swagger documentation, deployed on Render. Live at [umba-fraud-detection.onrender.com/docs](https://umba-fraud-detection.onrender.com/docs). Supports single transaction scoring, health checks, model info, and configurable alarm threshold.
+
+**Part C — Dashboard:** React + TypeScript operations dashboard, deployed on Netlify. Live at [umba-fraud-detection.netlify.app](https://umba-fraud-detection.netlify.app/). Shows model health, score distributions, top flagged transactions, and lets operators adjust sensitivity.
+
+**Part D — Dockerize & Deploy:** Dockerfiles for both API and dashboard, docker-compose for multi-service orchestration, cloud deployment instructions for Render and Netlify included.
+
+**predictions.csv:** 40,000 rows in the exact submission format matching `sample_submission.csv`. One row per TransactionID with calibrated `isFraud_prob` values in [0, 1].
+
+**GitHub Repo:** Full source code, trained model artifact, Jupyter notebook, and this README. Available at [github.com/gregory-bot/Umba-Fraud-Detection](https://github.com/gregory-bot/Umba-Fraud-Detection).
 
 ---
 
