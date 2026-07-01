@@ -36,7 +36,7 @@
 
 ## Architecture
 
-![System Architecture — Umba Fraud Detection](https://i.postimg.cc/43nKY7rn/f4a2d8c1-e36a-4514-8be6-20f9adbd2fbc.png)
+![Architecture — Umba Fraud Detection](https://i.postimg.cc/43nKY7rn/f4a2d8c1-e36a-4514-8be6-20f9adbd2fbc.png)
 
 **End-to-end flow:** Raw CSV data from Kenya and Nigeria → Preprocessing & feature engineering (97 features, leakage removed) → 4-model comparison with time-series cross-validation → Random Forest selected (PR-AUC: 0.162, ROC-AUC: 0.789) → Isotonic calibration → FastAPI serving on Render → React + TypeScript operations dashboard on Netlify.
 
