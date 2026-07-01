@@ -132,31 +132,33 @@ The model does not eliminate fraud. It concentrates it — so the same number of
 
 ### Score Distribution
 
-![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/Screenshot 2026-07-01 094628.png)
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/score.png)
 
 ### Transaction Lookup
 
-![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/Screenshot 2026-07-01 094549.png)
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/transaction.png)
 
 ### API, Swagger Docs
 
-![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/code5.png)
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/code6.png)
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/code6.png)
 
-### API — Predict Response
+### API Predict Response
 
-> *(Add screenshot: live response JSON with isFraud_prob, alarm, risk_level)*
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/pred.png)
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/transaction.png)
 
-### Training Run — Terminal Output
+### Training Run
 
-> *(Add screenshot: python src/pipeline.py output showing CV folds, metrics, model saved)*
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/code1.png)
 
 ### Render Deployment Logs
 
-> *(Add screenshot: Render build log showing successful deploy)*
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/code3.png)
 
 ---
 
-## Quick Start
+## Start
 
 ### Prerequisites
 
@@ -177,7 +179,7 @@ source .venv/bin/activate        # Linux / Mac
 .\.venv\Scripts\Activate.ps1     # Windows
 
 # 3. Install dependencies
-pip install -r requirements.txt
+pip install -r requirements.txt   or you can use uv package since it;s faster. uv install..
 
 # 4. Place the data files
 # Copy train.csv, test.csv, identity.csv, sample_submission.csv into data/
@@ -217,7 +219,7 @@ streamlit run dashboard/app.py
 | `PUT` | `/threshold` | Update alarm threshold (ops use) |
 | `GET` | `/predictions/csv` | Download full test-set predictions |
 
-### Example — score a transaction
+### Example, score a transaction
 
 ```bash
 curl -X POST https://umba-fraud-detection.onrender.com/predict \
@@ -310,11 +312,11 @@ Umba-Fraud-Detection/
 
 ---
 
-## Data Integrity — What Was Checked and Why It Matters
+## Data Integrity, What Was Checked and Why It Matters
 
 ### Finding 1 — `flagged_for_review` is a leakage column
 
-`flagged_for_review` had a Spearman correlation of **0.63** with `isFraud` — by far the strongest signal. The data dictionary notes this field is "populated by reviewers as part of the review process." In plain terms: the field only exists after a human has already decided the transaction is suspicious. At real-time scoring, this field is always blank. **Dropped.**
+`flagged_for_review` had a Spearman correlation of **0.63** with `isFraud` — by far the strongest signal. The data dictionary notes this field is "populated by reviewers as part of the review process." In plain terms: the field only exists after a human has already decided the transaction is suspicious. At real-time scoring, this field is always **Dropped.**
 
 A model trained with this field would show inflated PR-AUC on validation (it would essentially learn "if flagged = 1, predict fraud") and then fail completely in production. This is the most common failure mode in fraud modelling and the most important thing to catch.
 
@@ -405,9 +407,7 @@ The model artifact (`model/fraud_model.pkl`) is pre-trained and included in the 
 
 ---
 
-## Production Monitoring (Bonus Thinking)
-
-This section answers: *how would you keep this working after go-live?*
+## Production Monitoring
 
 **Drift detection**  
 Track Population Stability Index (PSI) weekly on the top 20 input features. PSI > 0.2 on any feature triggers a retraining alert. In practice, `TransactionAmt` distribution and channel mix shift fastest in African mobile money markets — those get daily monitoring.
@@ -437,9 +437,9 @@ Shadow mode: new model runs in parallel, logs scores, is not yet used for decisi
 
 ---
 
-## AI Tool Usage — Honest Account
+## AI Tool Usage
 
-This is an AI-native role. The expectation is fluent use of AI tools *with* rigorous human judgment. Here is exactly how that worked on this project.
+Here is exactly how that worked on this project.
 
 ### Where AI accelerated the work
 
@@ -448,12 +448,6 @@ I used Claude to generate adversarial transaction payloads designed to break the
 
 **Statistical test selection**  
 Given 97 features and a non-parametric distribution (D'Agostino-Pearson confirmed non-normality across all features), I used Claude as a sounding board for whether Mann-Whitney U or Kolmogorov-Smirnov was more appropriate given the sample sizes and the fraud/legitimate imbalance. I made the call; AI surfaced the relevant considerations quickly.
-
-**Documentation structure**  
-First draft of the non-technical "how it works" section was generated as a starting point. Every sentence was rewritten or cut. The leakage explanation, the calibration section, and the trade-offs table are entirely original — those required judgment that AI cannot substitute.
-
-**Boilerplate scaffolding**  
-API endpoint schemas, Pydantic models, Dockerfile templates. Generated, then read line by line and edited. Nothing was committed without being understood.
 
 **Debugging**  
 The identity aggregation join issue (5,530 duplicate TransactionIDs producing inflated row counts) was flagged by Claude when I described the shape mismatch. I verified the root cause independently in a notebook, wrote the aggregation logic, and validated the fix. The tool pointed; I drove.
@@ -491,4 +485,5 @@ The core judgment calls in this project were made without AI:
 
 ---
 
-*Proprietary — Umba Microfinance Bank Limited. All rights reserved.*
+*Umba Microfinance Bank Limited. All rights reserved.*
+*Thanyou*
