@@ -126,7 +126,7 @@ The model does not eliminate fraud. It concentrates it — so the same number of
 
 ### Dashboard — Front-end
 
-> *(umba1.png)*
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/umba1.png)
 
 ### Dashboard — Overview
 
