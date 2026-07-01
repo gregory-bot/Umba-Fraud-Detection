@@ -9,13 +9,13 @@
 
 ## Submission Summary
 
-**Part A — Pipeline & Model:** 4-model comparison, time-series cross-validation, Random Forest selected, isotonic calibration applied. Full pipeline is reproducible with a single command: `python src/pipeline.py`.
+**Part A Pipeline & Model:** 4-model comparison, time-series cross-validation, Random Forest selected, isotonic calibration applied. Full pipeline is reproducible with a single command: `python src/pipeline.py`.
 
-**Part B — Serving API:** FastAPI with interactive Swagger documentation, deployed on Render. Live at [umba-fraud-detection.onrender.com/docs](https://umba-fraud-detection.onrender.com/docs). Supports single transaction scoring, health checks, model info, and configurable alarm threshold.
+**Part B Serving API:** FastAPI with interactive Swagger documentation, deployed on Render. Live at [umba-fraud-detection.onrender.com/docs](https://umba-fraud-detection.onrender.com/docs). Supports single transaction scoring, health checks, model info, and configurable alarm threshold.
 
-**Part C — Dashboard:** React + TypeScript operations dashboard, deployed on Netlify. Live at [umba-fraud-detection.netlify.app](https://umba-fraud-detection.netlify.app/). Shows model health, score distributions, top flagged transactions, and lets operators adjust sensitivity.
+**Part C Dashboard:** React + TypeScript operations dashboard, deployed on Netlify. Live at [umba-fraud-detection.netlify.app](https://umba-fraud-detection.netlify.app/). Shows model health, score distributions, top flagged transactions, and lets operators adjust sensitivity.
 
-**Part D — Dockerize & Deploy:** Dockerfiles for both API and dashboard, docker-compose for multi-service orchestration, cloud deployment instructions for Render and Netlify included.
+**Part D Dockerize & Deploy:** Dockerfiles for both API and dashboard, docker-compose for multi-service orchestration, cloud deployment instructions for Render and Netlify included.
 
 **predictions.csv:** 40,000 rows in the exact submission format matching `sample_submission.csv`. One row per TransactionID with calibrated `isFraud_prob` values in [0, 1].
 
@@ -56,8 +56,6 @@
 
 Every day, thousands of mobile money, card, and bank-transfer transactions flow through Umba across Kenya and Nigeria. Most are legitimate. A small fraction — about 3 in every 100 — are fraudulent.
 
-The challenge is not "can a model spot fraud?" It is **can the bank act on it, in real time?**
-
 This project answers that with four things working together:
 
 1. A **pipeline** that trains and validates a fraud detection model on 120,000 historical transactions
@@ -69,18 +67,18 @@ This project answers that with four things working together:
 
 ## How It Works
 
-### Step 1 — Learn from the past
+### Step 1 Learn from the past
 The model was trained on 120,000 historical transactions, each already labelled "fraud" or "legitimate." It studied patterns; amount, channel, device, time of day, recipient account age, that separate the two groups.
 
-### Step 2 — Removed the (data leakage)
+### Step 2 Removed the (data leakage)
 One field, `flagged_for_review`, had a 0.63 correlation with the fraud label — the strongest signal in the dataset. But on inspection: reviewers only fill this field in *after* deciding a transaction is fraudulent. It is a consequence of fraud, not a predictor of it.
 
 This was the single most important judgment call in the project.
 
-### Step 3 — Test
+### Step 3 Test
 Instead of shuffling all transactions randomly (which leaks future patterns into training), the model was trained on the earliest 80% of transactions by time and tested on the remaining 20% — strictly later in time. This is exactly how it will work live: always predicting transactions it has never seen.
 
-### Step 4 — Compare four candidate models
+### Step 4 Compare four candidate models
 
 | Model | PR-AUC | ROC-AUC | Brier Score |
 |-------|--------|---------|-------------|
@@ -91,10 +89,10 @@ Instead of shuffling all transactions randomly (which leaks future patterns into
 
 Random Forest was selected. PR-AUC is the honest primary metric under heavy class imbalance (3.4% fraud rate) — it measures precision-recall trade-off across all thresholds, unlike ROC-AUC which can look good even on a useless model when the negatives heavily outnumber positives.
 
-### Step 5 — Calibrate the probabilities
+### Step 5 Calibrate the probabilities
 A raw model score of 0.8 does not automatically mean an 80% chance of fraud. **Isotonic calibration** was applied so scores are meaningful: a score of 0.8 should correspond to roughly 8 in 10 similar transactions being fraudulent. This matters for threshold setting and for ops teams trusting the output.
 
-### Step 6 — Serve it in real time
+### Step 6 Serve it in real time
 The trained model is loaded into a FastAPI service. A transaction comes in, the same 97 features are computed on the fly, and a risk score is returned in under 50 ms. A React dashboard gives operations teams a live view of flagged transactions, risk distribution, and threshold controls — without needing to write a single line of code.
 
 ---
@@ -124,25 +122,25 @@ The model does not eliminate fraud. It concentrates it — so the same number of
 
 ## Screenshots
 
-### Dashboard — Front-end
+### Dashboard Front-end
 
 ![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/umba1.png)
 
-### Dashboard — Overview
+### Overview
 
-> *(Add screenshot: overview page showing model health, fraud rate, flagged count)*
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/code1.png)
 
-### Dashboard — Score Distribution
+### Score Distribution
 
-> *(Add screenshot: histogram of isFraud_prob across 40,000 test transactions)*
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/Screenshot 2026-07-01 094628.png)
 
-### Dashboard — Transaction Lookup
+### Transaction Lookup
 
-> *(Add screenshot: transaction ID input returning risk score with colour-coded badge)*
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/Screenshot 2026-07-01 094549.png)
 
-### API — Swagger Docs
+### API, Swagger Docs
 
-> *(Add screenshot: Render-deployed /docs page showing POST /predict endpoint)*
+![Umba Fraud Detection Landing](https://raw.githubusercontent.com/gregory-bot/Umba-Fraud-Detection/main/code5.png)
 
 ### API — Predict Response
 
