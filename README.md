@@ -1,9 +1,8 @@
-# Umba Fraud Detection — Take-Home Assessment
+# Umba Fraud Detection Assessment
 
-**Catching fraud before money moves. Real-time scoring, clear answers, no data science background required.**
-
-Built for the Data Scientist role at Umba Microfinance Bank Limited.  
-**Author:** Gregory Bot · **Date:** July 2026 · **Time invested:** ~6 hours
+**Catching fraud before money moves.**
+  
+**Author:** Kipngeno Gregory · **Date:** July 2026 · **Time invested:** ~6 hours
 
 ---
 
@@ -11,12 +10,12 @@ Built for the Data Scientist role at Umba Microfinance Bank Limited.
 
 | Part | Deliverable | Status |
 |------|-------------|--------|
-| **A — Pipeline & Model** | 4-model comparison, time-series CV, Random Forest, isotonic calibration | ✅ Complete |
-| **B — Serving API** | FastAPI with Swagger docs, deployed on Render | ✅ [Live](https://umba-fraud-detection.onrender.com/docs) |
-| **C — Dashboard** | React + TypeScript operations dashboard, deployed on Netlify | ✅ [Live](https://umba-fraud-detection.netlify.app/) |
-| **D — Dockerize & Deploy** | Dockerfiles, docker-compose, cloud deployment tutorial | ✅ Complete |
-| **predictions.csv** | 40,000 rows, correct submission format | ✅ Included |
-| **GitHub Repo** | Full source code, model artifact, README | ✅ [gregory-bot/Umba-Fraud-Detection](https://github.com/gregory-bot/Umba-Fraud-Detection) |
+| **A — Pipeline & Model** | 4-model comparison, time-series CV, Random Forest, isotonic calibration
+| **B — Serving API** | FastAPI with Swagger docs, deployed on Render |  [Backend](https://umba-fraud-detection.onrender.com/docs) |
+| **C — Dashboard** | React + TypeScript operations dashboard, deployed on Netlify |  [front-end](https://umba-fraud-detection.netlify.app/) |
+| **D — Dockerize & Deploy** | Dockerfiles, docker-compose, cloud deployment
+| **predictions.csv** | 40,000 rows, correct submission format
+| **GitHub Repo** | Full source code, model artifact, README |  [gregory-bot/Umba-Fraud-Detection](https://github.com/gregory-bot/Umba-Fraud-Detection) |
 
 ---
 
