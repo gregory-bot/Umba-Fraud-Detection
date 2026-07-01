@@ -8,7 +8,7 @@
 
 ## Submission Summary
 
-| Part | Deliverable
+| Part | Deliverable |
 |------|-------------|--------|
 | **A — Pipeline & Model** | 4-model comparison, time-series CV, Random Forest, isotonic calibration
 | **B — Serving API** | FastAPI with Swagger docs, deployed on Render |  [Backend](https://umba-fraud-detection.onrender.com/docs) |
