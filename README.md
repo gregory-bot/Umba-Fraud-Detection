@@ -6,8 +6,6 @@
 
 ---
 
-## Submission Summary
-
 
 ## Submission Summary
 
@@ -29,14 +27,14 @@
 
 | Service | URL |
 |---------|-----|
-| **Frontend Dashboard** | [umba-fraud-detection.netlify.app](https://umba-fraud-detection.netlify.app/) |
+| **Frontend** | [umba-fraud-detection.netlify.app](https://umba-fraud-detection.netlify.app/) |
 | **Backend API** | [umba-fraud-detection.onrender.com](https://umba-fraud-detection.onrender.com) |
 | **Swagger / Interactive Docs** | [umba-fraud-detection.onrender.com/docs](https://umba-fraud-detection.onrender.com/docs) |
 | **Source Code** | [github.com/gregory-bot/Umba-Fraud-Detection](https://github.com/gregory-bot/Umba-Fraud-Detection) |
 
 ---
 
-## System Architecture
+## Architecture
 
 ![System Architecture — Umba Fraud Detection](https://i.postimg.cc/43nKY7rn/f4a2d8c1-e36a-4514-8be6-20f9adbd2fbc.png)
 
@@ -54,34 +52,32 @@
 
 ---
 
-## The Problem, in Plain English
+## The Problem
 
 Every day, thousands of mobile money, card, and bank-transfer transactions flow through Umba across Kenya and Nigeria. Most are legitimate. A small fraction — about 3 in every 100 — are fraudulent.
 
-The challenge is not "can a model spot fraud?" It is **can the bank act on it, in real time, without drowning staff in false alarms?**
+The challenge is not "can a model spot fraud?" It is **can the bank act on it, in real time?**
 
 This project answers that with four things working together:
 
 1. A **pipeline** that trains and validates a fraud detection model on 120,000 historical transactions
 2. A **model** (Random Forest) that scores every transaction for fraud risk with calibrated probabilities
 3. An **API** that delivers that score in milliseconds when a transaction happens
-4. A **dashboard** that lets a non-technical operations team see what is flagged and why — no code required
+4. A **front-end** that lets an operations team see what is flagged and why
 
 ---
 
-## How It Works, Step by Step
+## How It Works
 
 ### Step 1 — Learn from the past
-The model was trained on 120,000 historical transactions, each already labelled "fraud" or "legitimate." It studied patterns — amount, channel, device, time of day, recipient account age — that separate the two groups.
+The model was trained on 120,000 historical transactions, each already labelled "fraud" or "legitimate." It studied patterns; amount, channel, device, time of day, recipient account age, that separate the two groups.
 
-### Step 2 — Remove the cheat code (data leakage)
+### Step 2 — Removed the (data leakage)
 One field, `flagged_for_review`, had a 0.63 correlation with the fraud label — the strongest signal in the dataset. But on inspection: reviewers only fill this field in *after* deciding a transaction is fraudulent. It is a consequence of fraud, not a predictor of it.
-
-Using it would be like giving the model the answer sheet during the exam — impressive validation scores, completely useless in production where the field is always empty at decision time. **It was removed entirely.**
 
 This was the single most important judgment call in the project.
 
-### Step 3 — Test like it is production
+### Step 3 — Test
 Instead of shuffling all transactions randomly (which leaks future patterns into training), the model was trained on the earliest 80% of transactions by time and tested on the remaining 20% — strictly later in time. This is exactly how it will work live: always predicting transactions it has never seen.
 
 ### Step 4 — Compare four candidate models
