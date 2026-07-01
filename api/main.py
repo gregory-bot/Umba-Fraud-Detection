@@ -31,6 +31,11 @@ from pydantic import BaseModel, Field, ConfigDict
 # ============================================================================
 
 class TransactionInput(BaseModel):
+    """Single transaction for fraud scoring.
+
+    Only TransactionID, TransactionDT, and TransactionAmt are required.
+    All other fields default to None/NaN matching training behavior.
+    """
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -54,32 +59,32 @@ class TransactionInput(BaseModel):
     TransactionID: int = Field(..., description="Unique transaction identifier")
     TransactionDT: int = Field(..., description="Transaction timestamp (seconds offset from reference)")
     TransactionAmt: float = Field(..., description="Transaction amount in local currency")
-    country: Optional[str] = Field("KE", description="Country: KE or NG")
+    country: Optional[str] = Field("KE", description="Country: KE (Kenya) or NG (Nigeria)")
     currency: Optional[str] = Field("KES", description="Currency: KES or NGN")
-    channel: Optional[str] = Field(None, description="mobile_money, p2p, bank_transfer, card, airtime, bill_pay")
-    card_type: Optional[str] = Field(None, description="debit, credit, prepaid")
-    card_bank: Optional[str] = Field(None, description="Anonymised card issuer")
-    card1: Optional[float] = None
-    card2: Optional[float] = None
-    card3: Optional[float] = None
-    card5: Optional[float] = None
-    addr1: Optional[float] = None
-    addr2: Optional[float] = None
-    dist1: Optional[float] = None
-    dist2: Optional[float] = None
-    P_emaildomain: Optional[str] = None
-    R_emaildomain: Optional[str] = None
-    recipient_account_age_days: Optional[int] = None
-    sender_prev_txn_count: Optional[int] = None
+    channel: Optional[str] = Field(None, description="Channel: mobile_money, p2p, bank_transfer, card, airtime, bill_pay")
+    card_type: Optional[str] = Field(None, description="Card type: debit, credit, prepaid")
+    card_bank: Optional[str] = Field(None, description="Anonymised card issuer / wallet provider")
+    card1: Optional[float] = Field(None, description="Anonymised card attribute")
+    card2: Optional[float] = Field(None, description="Anonymised card attribute")
+    card3: Optional[float] = Field(None, description="Anonymised card attribute")
+    card5: Optional[float] = Field(None, description="Anonymised card attribute")
+    addr1: Optional[float] = Field(None, description="Anonymised address code")
+    addr2: Optional[float] = Field(None, description="Anonymised address code")
+    dist1: Optional[float] = Field(None, description="Distance measure")
+    dist2: Optional[float] = Field(None, description="Distance measure")
+    P_emaildomain: Optional[str] = Field(None, description="Payer email domain")
+    R_emaildomain: Optional[str] = Field(None, description="Recipient email domain")
+    recipient_account_age_days: Optional[int] = Field(None, description="Age of recipient account in days")
+    sender_prev_txn_count: Optional[int] = Field(None, description="Number of prior sender transactions")
     C1: Optional[int] = None; C2: Optional[int] = None; C3: Optional[int] = None; C4: Optional[int] = None
     C5: Optional[int] = None; C6: Optional[int] = None; C7: Optional[int] = None; C8: Optional[int] = None
     D1: Optional[float] = None; D2: Optional[float] = None; D3: Optional[float] = None
     D4: Optional[float] = None; D5: Optional[float] = None
     M1: Optional[str] = None; M2: Optional[str] = None; M3: Optional[str] = None
     M4: Optional[str] = None; M5: Optional[str] = None; M6: Optional[str] = None
-    V1: Optional[float] = None;  V2: Optional[float] = None;  V3: Optional[float] = None
-    V4: Optional[float] = None;  V5: Optional[float] = None;  V6: Optional[float] = None
-    V7: Optional[float] = None;  V8: Optional[float] = None;  V9: Optional[float] = None
+    V1: Optional[float] = None; V2: Optional[float] = None; V3: Optional[float] = None
+    V4: Optional[float] = None; V5: Optional[float] = None; V6: Optional[float] = None
+    V7: Optional[float] = None; V8: Optional[float] = None; V9: Optional[float] = None
     V10: Optional[float] = None; V11: Optional[float] = None; V12: Optional[float] = None
     V13: Optional[float] = None; V14: Optional[float] = None; V15: Optional[float] = None
     V16: Optional[float] = None; V17: Optional[float] = None; V18: Optional[float] = None
@@ -87,33 +92,37 @@ class TransactionInput(BaseModel):
 
 
 class PredictionOutput(BaseModel):
-    TransactionID: int
-    isFraud_prob: float = Field(..., ge=0, le=1)
-    alarm: bool
-    risk_level: str
+    """Prediction result for a single transaction."""
+    TransactionID: int = Field(..., description="Transaction identifier")
+    isFraud_prob: float = Field(..., description="Fraud probability (0-1)", ge=0, le=1)
+    alarm: bool = Field(..., description="Whether alarm threshold was exceeded")
+    risk_level: str = Field(..., description="Risk level: low, medium, high, critical")
 
 
 class HealthResponse(BaseModel):
-    status: str
-    model_loaded: bool
-    uptime: float
+    """Health check response."""
+    status: str = Field("ok", description="Service status")
+    model_loaded: bool = Field(..., description="Whether model is loaded")
+    uptime: float = Field(..., description="Service uptime in seconds")
 
 
 class ModelInfoResponse(BaseModel):
-    model_type: str
-    cv_pr_auc: float
-    cv_roc_auc: float
-    features: int
-    threshold: float
-    calibration: str
+    """Model metadata and performance."""
+    model_type: str = Field(..., description="Algorithm type")
+    cv_pr_auc: float = Field(..., description="Cross-validation PR-AUC")
+    cv_roc_auc: float = Field(..., description="Cross-validation ROC-AUC")
+    features: int = Field(..., description="Number of engineered features")
+    threshold: float = Field(..., description="Current alarm threshold")
+    calibration: str = Field(..., description="Calibration method")
 
 
 class ThresholdUpdate(BaseModel):
-    threshold: float = Field(..., ge=0, le=1)
+    """Threshold update request."""
+    threshold: float = Field(..., description="New alarm threshold (0-1)", ge=0, le=1)
 
 
 # ============================================================================
-# FastAPI App
+# FastAPI Application
 # ============================================================================
 
 app = FastAPI(
@@ -121,10 +130,21 @@ app = FastAPI(
     description="""
 ## Real-time Transaction Fraud Scoring Service
 
+This API serves a trained fraud detection model for scoring financial
+transactions in real-time. The model was trained on anonymised transaction
+data from Kenya and Nigeria.
+
+### Model Details
 - **Algorithm**: Random Forest with isotonic calibration
-- **PR-AUC**: 0.162 | **ROC-AUC**: 0.789
+- **Validation**: 5-fold time-series cross-validation
+- **PR-AUC**: 0.162 (honest metric for imbalanced data ~3.4% fraud)
+- **ROC-AUC**: 0.789
 - **Features**: 97 engineered features
-- `flagged_for_review` excluded to prevent data leakage
+
+### Data Integrity Notes
+- `flagged_for_review` intentionally excluded (post-hoc label, data leakage)
+- Time-based CV ensures no future information leaks into training
+- Identity data aggregated to one row per transaction
 """,
     version="1.0.0",
     docs_url="/docs",
@@ -146,51 +166,16 @@ app.add_middleware(
 
 MODEL = None
 TRAIN_DATA = None
-TRAIN_COLS = None
+TRAIN_COLS = None          # 97 engineered feature columns — set during startup
 ALARM_THRESHOLD = 0.5
 START_TIME = time.time()
 
 
-def _extract_feature_names(model) -> list:
-    """
-    Pull the feature column list directly from the trained model object.
-    This is the single source of truth — never try to reconstruct it from
-    a preprocessing run.
-
-    Handles three common wrappers:
-      1. Plain sklearn estimator with feature_names_in_
-      2. CalibratedClassifierCV (wraps estimator in calibrated_classifiers_)
-      3. Pipeline where the final step is the estimator
-    """
-    # Plain estimator
-    if hasattr(model, "feature_names_in_"):
-        return model.feature_names_in_.tolist()
-
-    # CalibratedClassifierCV
-    if hasattr(model, "calibrated_classifiers_"):
-        base = model.calibrated_classifiers_[0].estimator
-        if hasattr(base, "feature_names_in_"):
-            return base.feature_names_in_.tolist()
-        # Some sklearn versions store it as base_estimator
-        if hasattr(model, "estimator") and hasattr(model.estimator, "feature_names_in_"):
-            return model.estimator.feature_names_in_.tolist()
-
-    # sklearn Pipeline
-    if hasattr(model, "steps"):
-        final_step = model.steps[-1][1]
-        if hasattr(final_step, "feature_names_in_"):
-            return final_step.feature_names_in_.tolist()
-
-    raise RuntimeError(
-        "Cannot extract feature names from model. "
-        "Ensure the model was trained with sklearn >= 1.0 "
-        "so feature_names_in_ is set, or save feature names separately."
-    )
-
-
 @app.on_event("startup")
 async def startup():
-    """Load model and derive feature column list from the model itself."""
+    """Load model and derive the 97 engineered feature columns from a small
+    preprocessing run so _prepare() can align columns correctly at predict time.
+    """
     global MODEL, TRAIN_DATA, TRAIN_COLS
 
     model_dir = Path(__file__).parent.parent / "model"
@@ -200,56 +185,70 @@ async def startup():
 
     MODEL = joblib.load(model_dir / "fraud_model.pkl")
 
-    # SOURCE OF TRUTH: feature names live in the model, not the CSV
-    TRAIN_COLS = _extract_feature_names(MODEL)
-
-    # Load raw training data so _prepare() can fill in missing raw columns
-    train, _, _ = load_data(data_dir)
+    # Load raw data — needed so _prepare() can fill missing raw columns
+    train, test, _ = load_data(data_dir)
     TRAIN_DATA = train
 
-    print(f"Model loaded. Engineered features: {len(TRAIN_COLS)}. Ready.")
+    # Run preprocess on a small sample purely to discover the 97 engineered
+    # column names. We use the *test* output (second return value) because
+    # the test slice is the "unseen row" path — exactly what _prepare() does.
+    identity_path = os.path.join(data_dir, "identity.csv")
+    identity_sample = (
+        pd.read_csv(identity_path).head(100)
+        if os.path.exists(identity_path)
+        else pd.DataFrame()
+    )
+    _, X_sample, _ = preprocess(
+        train.head(500), test.head(100), identity_sample
+    )
+    TRAIN_COLS = X_sample.columns.tolist()
+
+    print(f"Model loaded. Engineered features: {len(TRAIN_COLS)}.")
 
 
 def _prepare(tx_dict: dict) -> pd.DataFrame:
-    """
-    Convert a raw API payload into the 97 engineered features the model needs.
+    """Transform a single raw transaction dict into the 97 engineered features
+    the model expects.
 
-    Rules:
-    - Keep TransactionID in the dict — preprocess() needs it for the identity
-      merge and drops it internally. Never pop it before calling preprocess().
-    - Fill any raw columns the caller omitted with NaN.
-    - Concat with a small training slice so freq-encoders have context.
-    - Use .reindex() (not []) to align to TRAIN_COLS — missing cols become 0,
-      extra cols are silently dropped. No KeyError possible.
+    Key rules:
+    - DO NOT pop TransactionID before calling preprocess() — preprocess() needs
+      it for the identity merge and drops it internally.
+    - Fill any raw columns the caller omitted with NaN so preprocess() can run.
+    - Concatenate with a small slice of training data so frequency-encoders and
+      categorical encoders have context (they were fit on training distribution).
+    - Return only the 97 columns in the exact order used at training time.
     """
     df = pd.DataFrame([tx_dict])
 
-    # Fill missing raw columns (skip label/leakage columns)
+    # Fill in any raw columns the caller didn't supply (except label columns)
     skip = {"isFraud", "flagged_for_review"}
     for col in TRAIN_DATA.columns:
         if col not in df.columns and col not in skip:
             df[col] = np.nan
 
-    # Prepend training slice so categorical/freq encoders have context
+    # Prepend a small training reference slice so encoders have context
     combined = pd.concat([TRAIN_DATA.head(100), df], ignore_index=True)
 
-    # preprocess() treats arg1 as train, arg2 as test
-    # Our transaction is the last row of arg1 (X_train)
+    # preprocess() signature: (train_df, test_df, identity_df)
+    # We pass the whole combined df as "train" and an empty df as "test"
+    # so the new row is the last row of the returned X_train
     X, _, _ = preprocess(
         combined,
         pd.DataFrame(columns=TRAIN_DATA.columns),
         pd.DataFrame(),
     )
 
-    # Grab our row and align to model's expected columns
-    # reindex fills any gap with 0 instead of raising KeyError
-    return X.iloc[[-1]].reindex(columns=TRAIN_COLS, fill_value=0)
+    # Take only the last row (our transaction) and align to training columns
+    return X.iloc[[-1]][TRAIN_COLS]
 
 
-def _risk_level(p: float) -> str:
-    if p >= 0.7:   return "critical"
-    elif p >= 0.5: return "high"
-    elif p >= 0.2: return "medium"
+def _risk_level(probability: float) -> str:
+    if probability >= 0.7:
+        return "critical"
+    elif probability >= 0.5:
+        return "high"
+    elif probability >= 0.2:
+        return "medium"
     return "low"
 
 
@@ -257,13 +256,22 @@ def _risk_level(p: float) -> str:
 # Endpoints
 # ============================================================================
 
-@app.get("/", response_model=dict, tags=["General"])
+@app.get("/", response_model=dict, summary="API Root", tags=["General"])
 async def root():
-    return {"service": "Umba Fraud Detection API", "version": "1.0.0",
-            "docs": "/docs", "status": "running"}
+    return {
+        "service": "Umba Fraud Detection API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "status": "running",
+    }
 
 
-@app.get("/health", response_model=HealthResponse, tags=["General"])
+@app.get(
+    "/health",
+    response_model=HealthResponse,
+    summary="Health Check",
+    tags=["General"],
+)
 async def health():
     return HealthResponse(
         status="ok",
@@ -272,18 +280,31 @@ async def health():
     )
 
 
-@app.get("/model/info", response_model=ModelInfoResponse, tags=["Model"])
+@app.get(
+    "/model/info",
+    response_model=ModelInfoResponse,
+    summary="Model Information",
+    tags=["Model"],
+)
 async def model_info():
     if MODEL is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Model not loaded")
     return ModelInfoResponse(
-        model_type="Random Forest", cv_pr_auc=0.162, cv_roc_auc=0.789,
+        model_type="Random Forest",
+        cv_pr_auc=0.162,
+        cv_roc_auc=0.789,
         features=len(TRAIN_COLS) if TRAIN_COLS else 97,
-        threshold=ALARM_THRESHOLD, calibration="Isotonic (5-fold CV)",
+        threshold=ALARM_THRESHOLD,
+        calibration="Isotonic (5-fold CV)",
     )
 
 
-@app.post("/predict", response_model=PredictionOutput, tags=["Prediction"])
+@app.post(
+    "/predict",
+    response_model=PredictionOutput,
+    summary="Predict Fraud Probability",
+    tags=["Prediction"],
+)
 async def predict(tx: TransactionInput):
     if MODEL is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Model not loaded")
@@ -297,16 +318,15 @@ async def predict(tx: TransactionInput):
             risk_level=_risk_level(p),
         )
     except Exception as e:
-        # Re-raise with full message so you can see the real error
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
 
-@app.get("/threshold", tags=["Configuration"])
+@app.get("/threshold", summary="Get Alarm Threshold", tags=["Configuration"])
 async def get_threshold():
     return {"threshold": ALARM_THRESHOLD}
 
 
-@app.put("/threshold", tags=["Configuration"])
+@app.put("/threshold", summary="Update Alarm Threshold", tags=["Configuration"])
 async def set_threshold(body: ThresholdUpdate):
     global ALARM_THRESHOLD
     ALARM_THRESHOLD = body.threshold
