@@ -155,3 +155,50 @@ TransactionID,isFraud_prob
 1120001,0.8742
 ...
 ```
+
+## Docker Deployment (Part D - Bonus)
+
+### Quick Start with Docker Compose
+
+\\\ash
+# Build and start all services
+docker compose up -d
+
+# Check logs
+docker compose logs -f api
+
+# Stop
+docker compose down
+\\\
+
+Services:
+- **API**: http://localhost:8000/docs
+- **Dashboard**: http://localhost:8501
+
+### Docker (Single Service)
+
+\\\ash
+# Build
+docker build -t umba-fraud-api .
+
+# Run
+docker run -p 8000:8000 umba-fraud-api
+\\\
+
+### Cloud Deployment
+
+**Render:**
+- Build Command: pip install -r requirements.txt
+- Start Command: uvicorn api.main:app --host 0.0.0.0 --port 
+- The model artifact is pre-trained and included in the repo.
+
+**AWS/GCP/Azure:**
+- Push Docker image to container registry
+- Deploy as container service (ECS, Cloud Run, ACI)
+- Mount persistent volume for model retraining artifacts
+
+### Production Monitoring
+
+- **Drift Detection**: Track PSI on feature distributions weekly
+- **Retraining**: Trigger when PR-AUC drops below threshold or every 30 days
+- **Alerting**: Set up alerts for prediction rate changes >20%
