@@ -124,6 +124,10 @@ The model does not eliminate fraud. It concentrates it — so the same number of
 
 ## Screenshots
 
+### Dashboard — Front-end
+
+> *(umba1.png)*
+
 ### Dashboard — Overview
 
 > *(Add screenshot: overview page showing model health, fraud rate, flagged count)*
