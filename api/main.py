@@ -13,6 +13,7 @@ Endpoints:
 - PUT  /threshold     - Update alarm threshold
 """
 import sys
+import os
 import time
 import json
 import pandas as pd
@@ -147,7 +148,7 @@ data from Kenya and Nigeria.
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    contact={"name": "gregory", "email": "kipngenogregory@gmail.com"},
+    contact={"name": "Gregory", "email": "kipngenogregory@gmail.com"},
 )
 
 app.add_middleware(
@@ -175,10 +176,11 @@ async def startup():
     global MODEL, TRAIN_DATA, TRAIN_COLS
     model_dir = Path(__file__).parent.parent / "model"
     MODEL = joblib.load(model_dir / "fraud_model.pkl")
-    train, _, _ = load_data('data')
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
+    train, _, _ = load_data(data_dir)
     TRAIN_DATA = train
     TRAIN_COLS = train.columns.tolist()
-    print(f"Model loaded. Features: {len(TRAIN_COLS)}. Ready.")
+    print(f"Model loaded. Features: {len(TRAIN_COLS)}. Data path: {data_dir}")
 
 
 def _prepare(tx_dict: dict) -> pd.DataFrame:
@@ -204,138 +206,49 @@ def _risk_level(probability: float) -> str:
 # Endpoints - General
 # ============================================================================
 
-@app.get(
-    "/",
-    response_model=dict,
-    summary="API Root",
-    description="Returns API information and links to documentation.",
-    tags=["General"]
-)
+@app.get("/", response_model=dict, summary="API Root", tags=["General"])
 async def root():
-    """Root endpoint."""
-    return {
-        "service": "Umba Fraud Detection API",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "health": "/health",
-        "model_info": "/model/info",
-        "status": "running"
-    }
+    return {"service": "Umba Fraud Detection API", "version": "1.0.0", "docs": "/docs", "status": "running"}
 
 
-@app.get(
-    "/health",
-    response_model=HealthResponse,
-    summary="Health Check",
-    description="Verifies API is running and model is loaded.",
-    tags=["General"]
-)
+@app.get("/health", response_model=HealthResponse, summary="Health Check", tags=["General"])
 async def health():
-    """Comprehensive health check."""
-    return HealthResponse(
-        status="ok",
-        model_loaded=MODEL is not None,
-        uptime=time.time() - START_TIME
-    )
+    return HealthResponse(status="ok", model_loaded=MODEL is not None, uptime=time.time() - START_TIME)
 
 
-# ============================================================================
-# Endpoints - Model
-# ============================================================================
-
-@app.get(
-    "/model/info",
-    response_model=ModelInfoResponse,
-    summary="Model Information",
-    description="Returns model metadata including training methodology and performance metrics.",
-    tags=["Model"]
-)
+@app.get("/model/info", response_model=ModelInfoResponse, summary="Model Information", tags=["Model"])
 async def model_info():
-    """Get model metadata."""
     if MODEL is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Model not loaded")
     return ModelInfoResponse(
-        model_type="Random Forest",
-        cv_pr_auc=0.162,
-        cv_roc_auc=0.789,
+        model_type="Random Forest", cv_pr_auc=0.162, cv_roc_auc=0.789,
         features=len(TRAIN_COLS) if TRAIN_COLS else 97,
-        threshold=ALARM_THRESHOLD,
-        calibration="Isotonic (5-fold CV)"
+        threshold=ALARM_THRESHOLD, calibration="Isotonic (5-fold CV)"
     )
 
 
-# ============================================================================
-# Endpoints - Prediction
-# ============================================================================
-
-@app.post(
-    "/predict",
-    response_model=PredictionOutput,
-    summary="Predict Fraud Probability",
-    description="""
-Score a single transaction for fraud probability.
-
-**Returns:**
-- **isFraud_prob**: Calibrated probability in [0, 1]
-- **alarm**: True if probability >= current threshold
-- **risk_level**: low / medium / high / critical
-
-**Model details:**
-The Random Forest model was trained on 120,000 transactions with
-5-fold time-series cross-validation and isotonic calibration.
-""",
-    tags=["Prediction"],
-    responses={
-        200: {"description": "Successful prediction"},
-        422: {"description": "Validation error - check input fields"},
-        503: {"description": "Model not loaded - run training first"}
-    }
-)
+@app.post("/predict", response_model=PredictionOutput, summary="Predict Fraud Probability", tags=["Prediction"])
 async def predict(tx: TransactionInput):
-    """Score a single transaction."""
     if MODEL is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Model not loaded")
     try:
         X = _prepare(tx.model_dump())
         p = float(MODEL.predict_proba(X)[0, 1])
         return PredictionOutput(
-            TransactionID=tx.TransactionID,
-            isFraud_prob=round(p, 4),
-            alarm=p >= ALARM_THRESHOLD,
-            risk_level=_risk_level(p)
+            TransactionID=tx.TransactionID, isFraud_prob=round(p, 4),
+            alarm=p >= ALARM_THRESHOLD, risk_level=_risk_level(p)
         )
     except Exception as e:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e))
 
 
-# ============================================================================
-# Endpoints - Configuration
-# ============================================================================
-
-@app.get(
-    "/threshold",
-    summary="Get Alarm Threshold",
-    description="Returns the current probability threshold for fraud alarms.",
-    tags=["Configuration"]
-)
+@app.get("/threshold", summary="Get Alarm Threshold", tags=["Configuration"])
 async def get_threshold():
-    """Get current threshold."""
     return {"threshold": ALARM_THRESHOLD}
 
 
-@app.put(
-    "/threshold",
-    summary="Update Alarm Threshold",
-    description="""
-Set the probability threshold above which transactions are flagged.
-
-- **Higher threshold** = fewer alarms, less operational overhead
-- **Lower threshold** = more sensitive, catches more fraud
-""",
-    tags=["Configuration"]
-)
+@app.put("/threshold", summary="Update Alarm Threshold", tags=["Configuration"])
 async def set_threshold(body: ThresholdUpdate):
-    """Update alarm threshold."""
     global ALARM_THRESHOLD
     ALARM_THRESHOLD = body.threshold
     return {"threshold": ALARM_THRESHOLD, "message": "Threshold updated"}
